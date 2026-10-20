@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>우리 반 도서 대출</title>
+  <style>
+    body { font-family: sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    input, button { padding: 6px 10px; }
+  </style>
+</head>
+<body>
+  <h1>📚 우리 반 도서 대출</h1>
+  <p>
+    <input id="username" placeholder="아이디">
+    <input id="password" type="password" placeholder="비밀번호">
+    <button id="signup">가입</button>
+    <button id="login">로그인</button>
+    <span id="me"></span>
+  </p>
+  <p><input id="q" placeholder="책 제목 검색"> <button id="search">검색</button></p>
+  <ul id="list"></ul>
+
+  <script>
+    let token = localStorage.getItem('token');
+    const $ = (id) => document.getElementById(id);
+
+    async function api(method, url, body) {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: token || '' },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      return res.json();
+    }
+
+    async function search() {
+      const list = await api('GET', '/api/books?q=' + $('q').value);
+      $('list').innerHTML = list
+        .map((b) => `<li><span>${b.title} · ${b.author} (남은 권수 ${b.available})</span>
+          <span><button onclick="act(${b.id}, 'borrow')">대출</button>
+          <button onclick="act(${b.id}, 'return')">반납</button></span></li>`)
+        .join('');
+    }
+
+    async function act(id, type) {
+      const result = await api('POST', `/api/books/${id}/${type}`);
+      if (result.error) alert(result.error);
+      if (result.fee) alert('연체료: ' + result.fee + '원');
+      search();
+    }
+
+    $('signup').onclick = async () => {
+      await api('POST', '/api/signup', { username: $('username').value, password: $('password').value });
+      alert('가입 완료');
+    };
+    $('login').onclick = async () => {
+      const result = await api('POST', '/api/login', { username: $('username').value, password: $('password').value });
+      if (result.token) {
+        token = result.token;
+        localStorage.setItem('token', token);
+        $('me').textContent = $('username').value + '님';
+      } else {
+        alert(result.error);
+      }
+    };
+    $('search').onclick = search;
+    search();
+  </script>
+</body>
+</html>

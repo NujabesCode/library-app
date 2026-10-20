@@ -1,0 +1,9 @@
+{
+  "name": "library-app",
+  "version": "1.0.0",
+  "description": "팀 에이전트 실습용 도서 대출 앱 (일부러 버그를 심어둔 연습용 코드)",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}
